@@ -16,7 +16,7 @@ export const uploadFile = async (localFilePath) => {
             folder: '/master_backend'
         });
         // success
-        console.log(`File uploaded successfully at: ${res.url}`)
+        fs.unlinkSync(localFilePath);
         return res
     }catch(error){
         // Remove the locally saved file if upload failed
