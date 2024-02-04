@@ -40,7 +40,7 @@ export const registerUser = async (req, res, next) => {
         }
 
         // Check for images, avatar
-        const avatarLocalPath = req.files?.avatar[0]?.path;
+        const avatarLocalPath = req.files?.avatar?.[0]?.path;
         const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
         if(!avatarLocalPath) return next("Avatar is required")
@@ -74,5 +74,101 @@ export const registerUser = async (req, res, next) => {
 
     }catch(error){
         next(error);
+    }
+}
+
+
+const generateTokens = async (userId) => {
+    try{
+        const user = await User.findById(userId);
+
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
+
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        return { accessToken, refreshToken }
+
+    }catch(error){
+        throw new ApiError(500, "Something went wrong while generating tokens");
+    }
+}
+
+
+export const loginUser = async (req, res, next) => {
+    try{
+        // Get data from frontend
+        const {username, password, email} = req.body;
+        
+        if(!username && !email) return next("Username or email is required")
+        if(!password) return next("Password is required")
+        
+        // Find User if  it exists
+        const user = await User.findOne({
+            $or: [{username}, {email}]
+        })
+        if(!user) return next("Invalid credentials");
+
+        const isPassValid = await user.comparePassword(password)
+        if(!isPassValid) return next("Invalid credentials");
+
+        const { accessToken, refreshToken } = await generateTokens(user._id)
+
+        const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+        // Cookies options
+        const options = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+        }
+
+        res.status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json({
+            success: true,
+            data: {
+                loggedInUser, accessToken, refreshToken
+            },
+            message: "Login success"
+        })
+    }catch(error){
+        next(error);
+        console.log(error)
+    }
+}
+
+
+export const logoutUser = async (req, res, next) => {
+    try{
+
+        await User.findByIdAndUpdate(req.user._id, 
+        {
+          $set: {
+            refreshToken: undefined
+          }  
+        }, {
+            new: true
+        })
+
+        // Cookies options
+        const options = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+        }
+
+        res.status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json({
+            success: true,
+            data: {},
+            message: "Logged out successfully"
+        })
+
+    }catch(error){
+        next(error)
+        console.log(error)
     }
 }
