@@ -147,12 +147,10 @@ export const logoutUser = async (req, res, next) => {
 
         await User.findByIdAndUpdate(req.user._id, 
         {
-          $set: {
-            refreshToken: undefined
+          $unset: {
+            refreshToken: 1 // remove refresh token from the db
           }  
-        }, {
-            new: true
-        })
+        }, { new: true });
 
         // Cookies options
         const options = {

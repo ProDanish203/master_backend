@@ -9,6 +9,7 @@ import xss from "xss-clean";
 import expMongoSanitize from "express-mongo-sanitize";
 // Routes
 import userRoute from "./routes/user.routes.js";
+import videoRoute from "./routes/video.route.js";
 
 
 // Initializing the app
@@ -46,6 +47,7 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 
 // Routes
 app.use("/api/v1/user", userRoute);
+app.use("/api/v1/video", videoRoute);
 
 
 // Custom middleware
