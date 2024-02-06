@@ -25,3 +25,15 @@ export const uploadFile = async (localFilePath) => {
         return null;
     }
 }
+
+export const deleteFile = async (url) => {
+    try{
+        if(!url) return null;
+
+        const res = await cloudinary.uploader.destroy(url)
+        return res;
+    }catch(error){
+        console.log(error)
+        return null;
+    }
+}
