@@ -56,12 +56,11 @@ export const registerUser = async (req, res, next) => {
         // Create user collecction
         const user = await User.create({
             fullName, username, email, password,  
-            avatar: avatar.secure_url, 
-            coverImage : coverImage?.secure_url || "",
+            avatar: { public_id: avatar.public_id, url: avatar.secure_url}, 
+            coverImage : { public_id: coverImage?.public_id, url: coverImage?.secure_url} || "",
         })
         // Remove password and refreshToken fields
         const createdUser = await User.findById(user._id).select("-password -refreshToken")
-
         // Check for user creation
         if(!createdUser){
             return next("An error occured while registering user");
@@ -287,15 +286,16 @@ export const updateUserAvatar = async (req, res, next) => {
         if(!avatar.url) return next("Error while uploading avatar");
 
         // Delete current avatar
-        // const currentAvatar = await deleteFile(req.user?.avatar);
-        // if(!currentAvatar) 
-
+        
         const user = await User.findByIdAndUpdate(req.user?._id, {
             $set: {
-                avatar: avatar.secure_url
+                avatar: {public_id: avatar.public_id, url: avatar.secure_url}
             }
         }, { new: true })
         .select("-password -refreshToken")
+        
+        // Delete the previous stored avatar
+        await deleteFile(req.user?.avatar?.public_id);
 
         return res.status(200).json({
             success: true,
@@ -317,12 +317,16 @@ export const updateUserCoverImage = async (req, res, next) => {
         const coverImage = await uploadFile(coverImageLocalPath)
         if(!coverImage.url) return next("Error while uploading cover image");
 
+        
         const user = await User.findByIdAndUpdate(req.user?._id, {
             $set: {
-                coverImage: coverImage.secure_url
+                coverImage: {public_id: coverImage.public_id, url: coverImage.secure_url}
             }
         }, { new: true })
         .select("-password -refreshToken")
+        
+        // Delete the previous stored cover Image
+        await deleteFile(req.user?.coverImage?.public_id);
 
         return res.status(200).json({
             success: true,

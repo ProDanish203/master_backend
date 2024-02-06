@@ -26,11 +26,11 @@ export const uploadFile = async (localFilePath) => {
     }
 }
 
-export const deleteFile = async (url) => {
+export const deleteFile = async (public_id) => {
     try{
-        if(!url) return null;
+        if(!public_id) return null;
 
-        const res = await cloudinary.uploader.destroy(url)
+        const res = await cloudinary.uploader.destroy(public_id)
         return res;
     }catch(error){
         console.log(error)
