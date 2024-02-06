@@ -1,6 +1,6 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
+// import { asyncHandler } from "../utils/asyncHandler.js";
+// import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadFile } from "../utils/fileUpload.js";
 import jwt from "jsonwebtoken";
@@ -67,7 +67,7 @@ export const registerUser = async (req, res, next) => {
         }
         // Send response
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true, 
             data: createdUser,
             message: "User registered successfully"
@@ -124,7 +124,7 @@ export const loginUser = async (req, res, next) => {
             secure: process.env.NODE_ENV === "production",
         }
 
-        res.status(200)
+        return res.status(200)
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
         .json({
@@ -159,7 +159,7 @@ export const logoutUser = async (req, res, next) => {
             secure: process.env.NODE_ENV === "production",
         }
 
-        res.status(200)
+        return res.status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
         .json({
@@ -173,6 +173,7 @@ export const logoutUser = async (req, res, next) => {
         console.log(error)
     }
 }
+
 
 export const refreshAccessToken = async (req, res, next) => {
     try{
@@ -193,7 +194,7 @@ export const refreshAccessToken = async (req, res, next) => {
 
         const { accessToken, refreshToken } = await generateTokens(user._id)
 
-        res.status(200)
+        return res.status(200)
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", refreshToken, options)
         .json({
@@ -207,5 +208,126 @@ export const refreshAccessToken = async (req, res, next) => {
     }catch(error){  
         next(error);
         console.log(error)
+    }
+}
+
+
+export const changeCurrentPassword = async (req, res, next) => {
+    try{
+        const { currentPassword, newPassword } = req.body;
+
+        if(!currentPassword) return next("Current password is required")
+        if(!newPassword) return next("New password is required")
+
+        const user = await User.findById(req.user?._id);
+        if(!user) return next("Authentication error");
+        
+        const checkPassword = await user.comparePassword(currentPassword);
+        if(!checkPassword) return next("Password is incorrect");
+
+        user.password = newPassword;
+        await user.save({ validateBeforeSave: false });
+
+        return res.status(200).json({
+            success: true,
+            data: {},
+            message: "Password changed successfully"
+        });
+
+    }catch(error){  
+        next(error);
+    }
+}
+
+
+export const getCurrentUser = async (req, res, next) => {
+    try{
+        return res.status(200).json({
+            success: true,
+            data: req.user,
+            message: "User fecthed successfully"
+        });
+
+    }catch(error){
+        next(error);
+    }
+}
+
+export const updateUserDetails = async (req, res, next) => {
+    try{
+        const {fullName} = req.body;
+
+        if(!fullName) return next("FullName is required");
+
+        const user = await User.findByIdAndUpdate(req.user?._id, {
+            $set: {
+                fullName
+            }
+        }, { new: true })
+        .select("-password -refreshToken");
+
+        return res.status(200).json({
+            success: true,
+            data: user,
+            message: "Profile updated"
+        });
+
+    }catch(error){
+        next(error);
+    }
+}
+
+
+export const updateUserAvatar = async (req, res, next) => {
+    try{
+        const avatarLocalPath = req.file?.path;
+        if(!avatarLocalPath) return next("Avatar is required");
+
+        // Upload on cloudinary
+        const avatar = await uploadFile(avatarLocalPath)
+        if(!avatar.url) return next("Error while uploading avatar");
+
+        const user = await User.findByIdAndUpdate(req.user?._id, {
+            $set: {
+                avatar: avatar.secure_url
+            }
+        }, { new: true })
+        .select("-password -refreshToken")
+
+        return res.status(200).json({
+            success: true,
+            data: user,
+            message: "Avatar updated"
+        })
+
+    }catch(error){
+        next(error);
+    }
+}
+
+export const updateUserCoverImage = async (req, res, next) => {
+    try{
+        const coverImageLocalPath = req.file?.path;
+        if(!coverImageLocalPath) return next("Cover image is required");
+
+        // Upload on cloudinary
+        const coverImage = await uploadFile(coverImageLocalPath)
+        if(!coverImage.url) return next("Error while uploading cover image");
+
+        const user = await User.findByIdAndUpdate(req.user?._id, {
+            $set: {
+                coverImage: coverImage.secure_url
+            }
+        }, { new: true })
+        .select("-password -refreshToken")
+
+        return res.status(200).json({
+            success: true,
+            data: user,
+            message: "Cover image updated"
+        })
+
+    }catch(error){
+        next(error);
     }
 }
