@@ -1,4 +1,4 @@
-import mongoose, { isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
 import { User } from "../models/user.model.js";
 import { Subscription } from "../models/subscription.model.js";
 
@@ -15,7 +15,7 @@ export const toggleSubscription = async (req, res, next) => {
             subscriber: req.user?._id,
             channel: channel._id
         });
-
+        
         if(isAlreadySubscribed.length == 0){
             const subscribe = await Subscription.create({
                 subscriber: req.user?._id,
@@ -28,10 +28,7 @@ export const toggleSubscription = async (req, res, next) => {
                 message: "Subscription added"
             })
         }else{
-            const removeSub = await Subscription.findOneAndDelete({
-                subscriber: req.user?._id,
-                channel: channel._id
-            })
+            const removeSub = await Subscription.findOneAndDelete(isAlreadySubscribed[0]._id)
             if(!removeSub) return next("Error occured in removing subscribtion");
             return res.status(200).json({
                 success: true,

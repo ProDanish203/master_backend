@@ -11,6 +11,7 @@ import expMongoSanitize from "express-mongo-sanitize";
 import userRoute from "./routes/user.routes.js";
 import videoRoute from "./routes/video.route.js";
 import subscriptionRoute from "./routes/subscription.route.js";
+import likeRoute from "./routes/like.route.js";
 
 
 // Initializing the app
@@ -50,6 +51,7 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/video", videoRoute);
 app.use("/api/v1/subscription", subscriptionRoute);
+app.use("/api/v1/like", likeRoute);
 
 
 // Custom middleware
