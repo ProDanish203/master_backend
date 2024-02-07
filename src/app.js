@@ -12,7 +12,7 @@ import userRoute from "./routes/user.routes.js";
 import videoRoute from "./routes/video.route.js";
 import subscriptionRoute from "./routes/subscription.route.js";
 import likeRoute from "./routes/like.route.js";
-
+import commentRoute from "./routes/comment.route.js";
 
 // Initializing the app
 const app = express();
@@ -52,6 +52,7 @@ app.use("/api/v1/user", userRoute);
 app.use("/api/v1/video", videoRoute);
 app.use("/api/v1/subscription", subscriptionRoute);
 app.use("/api/v1/like", likeRoute);
+app.use("/api/v1/comment", commentRoute);
 
 
 // Custom middleware

@@ -1,4 +1,4 @@
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
 import { Like } from "../models/like.model.js";
 import { Comment } from "../models/comment.model.js";
@@ -83,13 +83,56 @@ export const toggleCommentLike = async (req, res, next) => {
 // to get all the liked videos of the current user
 export const getLikedVideos = async (req, res, next) => {
     try{
-        
-        
+        const userId = new mongoose.Types.ObjectId(req.user?._id)
+        const videos = await Like.aggregate([
+            {
+                $match: {
+                    video: {
+                        $exists: true,
+                    },
+                    likedBy: userId
+                }
+            },
+            {
+                $lookup: {
+                    from: "videos",
+                    localField: "video",
+                    foreignField: "_id",
+                    as: "video",
+                    pipeline: [
+                        {
+                            $project: {
+                                videoFile: 1,
+                                thumbnail: 1,
+                                title: 1,
+                                description: 1,
+                                duration: 1,
+                                views: 1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    video: {
+                        $first: "$video"
+                    }
+                }
+            },
+            {
+                $project: {
+                    video: 1
+                }
+            }
+        ])
+
+        if(videos.length == 0) return next("No liked videos found");
 
         return res.status(200).json({
             success: true,
-            data: {},
-            message: ""
+            data: videos,
+            message: "All liked videos"
         })
     }catch(error){
         next(error);
